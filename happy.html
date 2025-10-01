@@ -1,0 +1,349 @@
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<head>
+    <title>I love you</title>
+</head>
+
+<body>
+<canvas id="canvas"></canvas>
+<style type="text/css">
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: black;
+    }
+</style>
+<script type="text/javascript">
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const colorSet = ["#33FFFF", "#f584b7"];
+
+    // ---------------------------
+    // MATRIX HAPPY BIRTHDAY EFFECT (BACKGROUND)
+    // ---------------------------
+    var texts = 'Happy Birthday'.split('');
+    var fontSize = 16;
+    var columns = canvas.width / fontSize;
+    var drops = [];
+
+    for (var x = 0; x < columns; x++) {
+        drops[x] = 1;
+    }
+
+    function randomColor() {
+        return colorSet[Math.floor(Math.random() * colorSet.length)];
+    }
+
+    function drawMatrix() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = fontSize + 'px Arial';
+
+        for (var i = 0; i < drops.length; i++) {
+            var text = texts[Math.floor(Math.random() * texts.length)];
+            ctx.fillStyle = randomColor();
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+            if (drops[i] * fontSize > canvas.height || Math.random() > 0.95) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+
+    // ---------------------------
+    // PARTICLE COUNTDOWN EFFECT
+    // ---------------------------
+    var particles = [];
+    var countdownNumbers = ["3", "2", "1"];
+    var currentIndex = 0;
+    var countdownDone = false;
+    var showCake = false;
+    var matrixInterval;
+
+    function createParticles(text) {
+        particles = [];
+
+        var tempCanvas = document.createElement("canvas");
+        var tctx = tempCanvas.getContext("2d");
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        tctx.fillStyle = "white";
+        tctx.font = "bold " + canvas.width / 3 + "px Arial";
+        tctx.textAlign = "center";
+        tctx.textBaseline = "middle";
+        tctx.fillText(text, tempCanvas.width / 2, tempCanvas.height / 2);
+
+        var imageData = tctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+
+        for (var y = 0; y < imageData.height; y += 6) {
+            for (var x = 0; x < imageData.width; x += 6) {
+                var index = (y * imageData.width + x) * 4;
+                if (imageData.data[index + 3] > 128) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        tx: x,
+                        ty: y,
+                        vx: 0,
+                        vy: 0,
+                        color: colorSet[Math.floor(Math.random() * colorSet.length)]
+                    });
+                }
+            }
+        }
+    }
+
+    function animateParticles() {
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach(p => {
+            p.vx += (p.tx - p.x) * 0.01;
+            p.vy += (p.ty - p.y) * 0.01;
+            p.vx *= 0.9;
+            p.vy *= 0.9;
+            p.x += p.vx;
+            p.y += p.vy;
+
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, 3, 3);
+        });
+    }
+
+    function runCountdown() {
+        if (currentIndex < countdownNumbers.length) {
+            createParticles(countdownNumbers[currentIndex]);
+            var duration = 1500;
+            var start = Date.now();
+            function step() {
+                var now = Date.now();
+                animateParticles();
+                if (now - start < duration) {
+                    requestAnimationFrame(step);
+                } else {
+                    currentIndex++;
+                    runCountdown();
+                }
+            }
+            step();
+        } else {
+            countdownDone = true;
+            showCake = true;
+            initCakeParticles();
+            animateCake();
+        }
+    }
+
+    // ---------------------------
+    // PARTICLE CAKE ANIMATION
+    // ---------------------------
+    var cakeParticles = [];
+    var cakeAnimationFrame = 0;
+    var cakeFullyFormed = false;
+
+    function initCakeParticles() {
+        var cakeX = canvas.width / 2;
+        var cakeY = canvas.height / 2;
+        var cakeWidth = 300;
+        var cakeHeight = 200;
+
+        for (var y = 0; y < 80; y += 3) {
+            for (var x = 0; x < cakeWidth; x += 3) {
+                if (Math.random() > 0.3) {
+                    cakeParticles.push({
+                        x: Math.random() * canvas.width,
+                        y: canvas.height + Math.random() * 200,
+                        tx: cakeX - cakeWidth/2 + x,
+                        ty: cakeY + 20 + y,
+                        vx: 0,
+                        vy: 0,
+                        color: '#f584b7',
+                        size: 2 + Math.random() * 2,
+                        layer: 1
+                    });
+                }
+            }
+        }
+
+        var width2 = cakeWidth * 0.7;
+        for (var y = 0; y < 60; y += 3) {
+            for (var x = 0; x < width2; x += 3) {
+                if (Math.random() > 0.3) {
+                    cakeParticles.push({
+                        x: Math.random() * canvas.width,
+                        y: canvas.height + Math.random() * 200,
+                        tx: cakeX - width2/2 + x,
+                        ty: cakeY - 40 + y,
+                        vx: 0,
+                        vy: 0,
+                        color: '#f584b7',
+                        size: 2 + Math.random() * 2,
+                        layer: 2
+                    });
+                }
+            }
+        }
+
+        var width3 = cakeWidth * 0.45;
+        for (var y = 0; y < 40; y += 3) {
+            for (var x = 0; x < width3; x += 3) {
+                if (Math.random() > 0.3) {
+                    cakeParticles.push({
+                        x: Math.random() * canvas.width,
+                        y: canvas.height + Math.random() * 200,
+                        tx: cakeX - width3/2 + x,
+                        ty: cakeY - 100 + y,
+                        vx: 0,
+                        vy: 0,
+                        color: '#f584b7',
+                        size: 2 + Math.random() * 2,
+                        layer: 3
+                    });
+                }
+            }
+        }
+
+        var candlePositions = [
+            { x: cakeX - 60, y: cakeY - 100 },
+            { x: cakeX, y: cakeY - 100 },
+            { x: cakeX + 60, y: cakeY - 100 }
+        ];
+
+        candlePositions.forEach(function(pos) {
+            for (var y = 0; y < 50; y += 3) {
+                for (var x = -8; x < 8; x += 3) {
+                    if (Math.random() > 0.2) {
+                        cakeParticles.push({
+                            x: Math.random() * canvas.width,
+                            y: -Math.random() * 200,
+                            tx: pos.x + x,
+                            ty: pos.y + y,
+                            vx: 0,
+                            vy: 0,
+                            color: '#fef08a',
+                            size: 2,
+                            isCandle: true,
+                            candleX: pos.x,
+                            candleY: pos.y
+                        });
+                    }
+                }
+            }
+        });
+    }
+    var flameParticles = [];
+    function createFlameParticles() {
+        if (!cakeFullyFormed) return;
+
+        var candlePositions = [
+            { x: canvas.width/2 - 60, y: canvas.height/2 - 100 },
+            { x: canvas.width/2, y: canvas.height/2 - 100 },
+            { x: canvas.width/2 + 60, y: canvas.height/2 - 100 }
+        ];
+
+        candlePositions.forEach(function(pos) {
+            if (Math.random() > 0.5) {
+                var angle = -Math.PI/2 + (Math.random() - 0.5) * 0.5;
+                var speed = 1 + Math.random() * 2;
+                
+                flameParticles.push({
+                    x: pos.x + (Math.random() - 0.5) * 10,
+                    y: pos.y - 10,
+                    vx: Math.cos(angle) * speed * 0.5,
+                    vy: Math.sin(angle) * speed,
+                    life: 30 + Math.random() * 20,
+                    maxLife: 50,
+                    color: Math.random() > 0.5 ? '#ff6b35' : '#ffee32',
+                    size: 2 + Math.random() * 3
+                });
+            }
+        });
+    }
+
+    function animateCake() {
+        if (!showCake) return;
+
+        drawMatrix();
+        var allSettled = true;
+        cakeParticles.forEach(function(p) {
+            var dx = p.tx - p.x;
+            var dy = p.ty - p.y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist > 1) {
+                allSettled = false;
+                p.vx += dx * 0.02;
+                p.vy += dy * 0.02;
+                p.vx *= 0.85;
+                p.vy *= 0.85;
+                p.x += p.vx;
+                p.y += p.vy;
+            } else {
+                p.x = p.tx;
+                p.y = p.ty;
+            }
+
+            ctx.fillStyle = p.color;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+            ctx.shadowBlur = 0;
+        });
+
+        if (allSettled && !cakeFullyFormed) {
+            cakeFullyFormed = true;
+        }
+
+        createFlameParticles();
+        
+        flameParticles = flameParticles.filter(function(p) {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy -= 0.1; 
+            p.life--;
+
+            var alpha = p.life / p.maxLife;
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = p.color;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+
+            return p.life > 0;
+        });
+
+        if (cakeFullyFormed && cakeAnimationFrame > 60) {
+            var alpha = Math.min((cakeAnimationFrame - 60) / 50, 1);
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = '#f584b7';
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#f584b7';
+            ctx.font = 'bold 70px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Happy Birthday!', canvas.width / 2, 120);
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+        }
+
+        cakeAnimationFrame++;
+        requestAnimationFrame(animateCake);
+    }
+
+    matrixInterval = setInterval(drawMatrix, 33);
+    
+    setTimeout(function() {
+        runCountdown();
+    }, 2000);
+</script>
+</body>
+</html>
